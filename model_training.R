@@ -1,11 +1,12 @@
-# model_training.R — Train linear regression with caret (first modeling pass)
-# Run from project root after data_preprocessing.R.
+# model_training.R — Train Linear Regression and Random Forest with caret; save artifacts
+# Run from project root after data_preprocessing.R (working directory = Projects/R).
 
 source(file.path(getwd(), "utils.R"))
 ensure_dirs()
 
 suppressPackageStartupMessages({
   library(caret)
+  library(randomForest)
   library(dplyr)
 })
 
@@ -41,9 +42,33 @@ fit_lm <- train(
   preProcess = c("center", "scale")
 )
 
-pred_lm_test <- predict(fit_lm, newdata = test_df)
-m_lm <- postResample(pred_lm_test, test_df[[TARGET_COL]])
+message("Training random forest (this may take a minute)...")
+fit_rf <- train(
+  model_formula,
+  data = train_df,
+  method = "rf",
+  trControl = ctrl,
+  preProcess = c("center", "scale"),
+  tuneLength = 5,
+  metric = "RMSE"
+)
 
+pred_lm_test <- predict(fit_lm, newdata = test_df)
+pred_rf_test <- predict(fit_rf, newdata = test_df)
+
+m_lm <- postResample(pred_lm_test, test_df[[TARGET_COL]])
+m_rf <- postResample(pred_rf_test, test_df[[TARGET_COL]])
+
+best_model <- if (as.numeric(m_rf["RMSE"]) <= as.numeric(m_lm["RMSE"])) "rf" else "lm"
+
+metrics_test <- data.frame(
+  model = c("Linear Regression", "Random Forest"),
+  RMSE = c(as.numeric(m_lm["RMSE"]), as.numeric(m_rf["RMSE"])),
+  Rsquared = c(as.numeric(m_lm["Rsquared"]), as.numeric(m_rf["Rsquared"])),
+  stringsAsFactors = FALSE
+)
+
+# Training-set resample metrics for dashboard comparison
 safe_cv_rmse <- function(fit) {
   r <- fit$results
   if (is.null(r) || !("RMSE" %in% names(r))) return(NA_real_)
@@ -54,25 +79,17 @@ safe_cv_r2 <- function(fit) {
   if (is.null(r) || !("Rsquared" %in% names(r))) return(NA_real_)
   max(r$Rsquared, na.rm = TRUE)
 }
-
-metrics_test <- data.frame(
-  model = "Linear Regression",
-  RMSE = as.numeric(m_lm["RMSE"]),
-  Rsquared = as.numeric(m_lm["Rsquared"]),
-  stringsAsFactors = FALSE
-)
-
 metrics_resample <- data.frame(
-  model = "Linear Regression",
-  RMSE = safe_cv_rmse(fit_lm),
-  Rsquared = safe_cv_r2(fit_lm),
+  model = c("Linear Regression", "Random Forest"),
+  RMSE = c(safe_cv_rmse(fit_lm), safe_cv_rmse(fit_rf)),
+  Rsquared = c(safe_cv_r2(fit_lm), safe_cv_r2(fit_rf)),
   stringsAsFactors = FALSE
 )
 
 artifacts <- list(
   fit_lm = fit_lm,
-  fit_rf = NULL,
-  best = "lm",
+  fit_rf = fit_rf,
+  best = best_model,
   metrics_test = metrics_test,
   metrics_resample = metrics_resample,
   predictors = PREDICTOR_COLS,
@@ -81,5 +98,6 @@ artifacts <- list(
 )
 
 saveRDS(artifacts, ARTIFACTS_RDS)
-message("Linear model test RMSE: ", round(metrics_test$RMSE, 4), " | R²: ", round(metrics_test$Rsquared, 4))
+message("Best model (lower test RMSE): ", best_model)
+message("Test metrics:\n", paste(capture.output(print(metrics_test)), collapse = "\n"))
 message("Saved: ", ARTIFACTS_RDS)

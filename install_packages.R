@@ -1,6 +1,7 @@
 # install_packages.R — One-time dependency install for the AQI project
 pkgs <- c(
-  "shiny", "plotly", "leaflet", "dplyr", "ggplot2", "caret", "e1071"
+  "shiny", "plotly", "leaflet", "dplyr", "ggplot2", "caret",
+  "randomForest", "e1071"
 )
 to_install <- pkgs[!vapply(pkgs, requireNamespace, FUN.VALUE = logical(1), quietly = TRUE)]
 if (length(to_install)) {

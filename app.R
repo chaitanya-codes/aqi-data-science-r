@@ -51,7 +51,11 @@ ui <- fluidPage(
       width = 9,
       tabsetPanel(
         id = "tabs",
-        tabPanel("AQI trend", plotlyOutput("plot_trend", height = "440px"))
+        tabPanel("AQI trend", plotlyOutput("plot_trend", height = "440px")),
+        tabPanel(
+          "Pollutant comparison",
+          plotlyOutput("plot_bars", height = "440px")
+        )
       )
     )
   )
@@ -85,6 +89,30 @@ server <- function(input, output, session) {
       theme_minimal(base_size = 13) +
       theme(legend.position = "bottom", panel.grid.minor = element_blank())
     ggplotly(p, tooltip = "text") %>% layout(hovermode = "x unified")
+  })
+
+  output$plot_bars <- renderPlotly({
+    d <- filtered_df()
+    if (nrow(d) < 1) {
+      return(plotly_empty() %>% layout(title = "No rows in range"))
+    }
+    long_df <- data.frame(
+      pollutant = c("PM2.5", "PM10", "NO2", "CO", "SO2"),
+      value = c(
+        mean(d$pm25, na.rm = TRUE),
+        mean(d$pm10, na.rm = TRUE),
+        mean(d$no2, na.rm = TRUE),
+        mean(d$co, na.rm = TRUE),
+        mean(d$so2, na.rm = TRUE)
+      ),
+      stringsAsFactors = FALSE
+    )
+    p <- ggplot(long_df, aes(x = pollutant, y = value, fill = pollutant, text = paste0(pollutant, ": ", round(value, 2)))) +
+      geom_col(width = 0.65, show.legend = FALSE) +
+      scale_fill_brewer(palette = "Set2") +
+      labs(x = NULL, y = "Mean level (dataset units)", title = "Mean pollutants (filtered)") +
+      theme_minimal(base_size = 13)
+    ggplotly(p, tooltip = "text")
   })
 }
 

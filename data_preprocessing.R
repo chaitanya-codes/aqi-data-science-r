@@ -1,7 +1,9 @@
 # data_preprocessing.R — Load CSV, clean, impute, parse dates, save processed RDS
 # Working directory must be this project folder (Projects/R).
+# Raw data is fetched automatically from a public India dataset URL (see data_acquisition.R).
 
 source(file.path(getwd(), "utils.R"))
+source(file.path(getwd(), "data_acquisition.R"))
 
 ensure_dirs()
 
@@ -22,6 +24,7 @@ impute_median <- function(x) {
 #' Parse dates with common formats (base R only)
 parse_dates_safe <- function(x) {
   x <- trimws(as.character(x))
+  # Days since 1970-01-01 if CSV stored R Date as a number
   num <- suppressWarnings(as.numeric(x))
   if (sum(!is.na(num)) / max(length(x), 1L) > 0.9) {
     dnum <- as.Date(num, origin = "1970-01-01")
@@ -45,25 +48,40 @@ parse_dates_safe <- function(x) {
   d
 }
 
-# --- Local CSV or reproducible demo ---
-if (!file.exists(RAW_CSV)) {
-  message("No ", RAW_CSV, " found; creating demo dataset for local development.")
-  create_demo_dataset(RAW_CSV)
+# --- Acquire India city-day data (public URL) unless skipped / cached ---
+skip_dl <- identical(Sys.getenv("AQI_SKIP_DOWNLOAD", unset = ""), "1")
+force_dl <- identical(Sys.getenv("AQI_FORCE_DOWNLOAD", unset = ""), "1")
+if (skip_dl) {
+  if (!file.exists(RAW_CSV)) {
+    stop(
+      "AQI_SKIP_DOWNLOAD=1 but ", RAW_CSV, " is missing. Remove AQI_SKIP_DOWNLOAD or place a CSV there.",
+      call. = FALSE
+    )
+  }
+  message("Using cached air_quality.csv (AQI_SKIP_DOWNLOAD=1).")
+} else if (force_dl || !file.exists(RAW_CSV)) {
+  message("Downloading India air quality dataset (multi-city CPCB-style city_day data)...")
+  acquire_india_air_quality_csv(RAW_CSV)
+} else {
+  message("Using existing ", RAW_CSV, " (set AQI_FORCE_DOWNLOAD=1 to refresh from URL).")
 }
 
 raw_df <- read.csv(RAW_CSV, stringsAsFactors = FALSE, check.names = FALSE, na.strings = c("", "NA", "null"))
 raw_df <- standardize_pollution_names(raw_df)
 
+# --- Date parsing ---
 if (!"date" %in% names(raw_df)) {
   stop("Dataset must include a date column (Date, dt, or timestamp).")
 }
 raw_df$date <- parse_dates_safe(raw_df$date)
 
+# --- City ---
 if (!"city" %in% names(raw_df)) {
   raw_df$city <- "Unknown"
 }
 raw_df$city <- as.character(raw_df$city)
 
+# --- Ensure pollutant + target columns exist ---
 need <- c(PREDICTOR_COLS, TARGET_COL)
 missing_cols <- setdiff(need, names(raw_df))
 if (length(missing_cols) > 0) {
@@ -74,13 +92,16 @@ if (length(missing_cols) > 0) {
   )
 }
 
+# --- Drop rows with missing target ---
 df <- raw_df[!is.na(raw_df[[TARGET_COL]]), , drop = FALSE]
 
+# --- Impute predictors ---
 for (col in PREDICTOR_COLS) {
   df[[col]] <- as.numeric(df[[col]])
   df[[col]] <- impute_median(df[[col]])
 }
 
+# --- Clip negative values ---
 for (col in PREDICTOR_COLS) {
   df[[col]][df[[col]] < 0] <- 0
 }

@@ -1,5 +1,6 @@
 # model_training.R — Train Linear Regression and Random Forest with caret; save artifacts
 # Run from project root after data_preprocessing.R (working directory = Projects/R).
+# Outputs: models/artifacts.rds (fits, best flag, test + CV metrics for the Shiny app).
 
 source(file.path(getwd(), "utils.R"))
 ensure_dirs()

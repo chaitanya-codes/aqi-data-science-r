@@ -5,6 +5,7 @@ author: "chaitanya-codes"
 date: "`r format(Sys.Date(), '%d-%m-%Y')`"
 output:
   word_document:
+    reference_docx: "reference_template.docx"
     toc: true
     toc_depth: 3
     number_sections: true
@@ -93,6 +94,32 @@ The EDA phase includes:
 - Pollutant distributions (PM2.5, PM10, NO2, CO, SO2)
 - Correlation analysis between pollutants and AQI
 
+### EDA & dashboard screenshots (evidence)
+
+**Data acquisition / reproducibility**
+
+![](screenshots/01_data_download.png){width=95%}
+
+**Dashboard overview (KPIs + sidebar)**
+
+![](screenshots/02_dashboard_overview_kpis.png){width=95%}
+
+**AQI trend (Plotly)**
+
+![](screenshots/03_aqi_trend_tab.png){width=95%}
+
+**Pollution map (Leaflet)**
+
+![](screenshots/04_pollution_map_tab.png){width=95%}
+
+**Pollutant comparison**
+
+![](screenshots/05_pollutant_comparison_tab.png){width=95%}
+
+**Correlation heatmap**
+
+![](screenshots/06_correlation_heatmap_tab.png){width=95%}
+
 ## Feature Engineering / Selection
 
 Predictors used for modeling:
@@ -128,6 +155,16 @@ Validation:
 - Hold-out test set evaluation
 - Cross-validation summary (best tune per model)
 
+### Model results (screenshots)
+
+**RMSE comparison chart**
+
+![](screenshots/07_model_performance_rmse_chart.png){width=90%}
+
+**Hold-out test + CV metrics table**
+
+![](screenshots/08_model_metrics_table.png){width=90%}
+
 ## Interactive Dashboard (Mandatory)
 
 Dashboard features:
@@ -140,6 +177,16 @@ Dashboard features:
 - Model performance section with RMSE comparison chart and styled tables
 - Prediction panel with AQI category and color indicator
 - Downloadable summary report
+
+### Prediction and report export (screenshots)
+
+**Prediction panel (inputs + predicted AQI + category)**
+
+![](screenshots/09_prediction_panel_inputs_output.png){width=95%}
+
+**Download report feature**
+
+![](screenshots/10_download_report_button.png){width=70%}
 
 ## Verification (End-to-end)
 

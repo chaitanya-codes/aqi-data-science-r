@@ -98,7 +98,11 @@ artifacts <- list(
   trained_at = Sys.time()
 )
 
-saveRDS(artifacts, ARTIFACTS_RDS)
+# Write atomically so Shiny never reads a partially-written RDS
+tmp_rds <- paste0(ARTIFACTS_RDS, ".tmp")
+saveRDS(artifacts, tmp_rds)
+if (file.exists(ARTIFACTS_RDS)) file.remove(ARTIFACTS_RDS)
+file.rename(tmp_rds, ARTIFACTS_RDS)
 message("Best model (lower test RMSE): ", best_model)
 message("Test metrics:\n", paste(capture.output(print(metrics_test)), collapse = "\n"))
 message("Saved: ", ARTIFACTS_RDS)

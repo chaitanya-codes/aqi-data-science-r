@@ -24,8 +24,18 @@ suppressPackageStartupMessages({
   library(ggplot2)
 })
 
-artifacts <- readRDS(file.path(models_dir(), "artifacts.rds"))
-aqi_df <- readRDS(file.path(data_dir(), "processed_air_quality.rds"))
+read_rds_retry <- function(path, retries = 8L, wait_s = 0.5) {
+  last_err <- NULL
+  for (i in seq_len(retries)) {
+    out <- tryCatch(readRDS(path), error = function(e) { last_err <<- e; NULL })
+    if (!is.null(out)) return(out)
+    Sys.sleep(wait_s)
+  }
+  stop("Failed to read: ", path, "\nLast error: ", conditionMessage(last_err), call. = FALSE)
+}
+
+artifacts <- read_rds_retry(file.path(models_dir(), "artifacts.rds"))
+aqi_df <- read_rds_retry(file.path(data_dir(), "processed_air_quality.rds"))
 
 best_fit <- if (artifacts$best == "rf") artifacts$fit_rf else artifacts$fit_lm
 
@@ -522,8 +532,11 @@ server <- function(input, output, session) {
 
   output$tbl_metrics_test_ui <- renderUI({
     mt <- artifacts$metrics_test
+    if (is.null(mt) || !is.data.frame(mt) || nrow(mt) < 1) {
+      return(div(class = "p-3 text-warning", "No test metrics available yet. Run the training pipeline."))
+    }
     best_i <- which.min(mt$RMSE)
-    rows <- apply(seq_len(nrow(mt)), 1L, function(i) {
+    rows <- lapply(seq_len(nrow(mt)), function(i) {
       tr_class <- if (i == best_i) "row-best" else ""
       tags$tr(
         class = tr_class,
@@ -537,7 +550,7 @@ server <- function(input, output, session) {
       tags$table(
         class = "metrics-table",
         tags$thead(tags$tr(tags$th("Model"), tags$th("RMSE"), tags$th("R²"))),
-        tags$tbody(rows)
+        tags$tbody(do.call(tagList, rows))
       ),
       if (best_i >= 1L) {
         tags$p(class = "small text-success mt-2 mb-0 px-2", icon("check-circle"), " Best test RMSE: ", mt$model[best_i])
@@ -547,8 +560,11 @@ server <- function(input, output, session) {
 
   output$tbl_metrics_cv_ui <- renderUI({
     mt <- artifacts$metrics_resample
+    if (is.null(mt) || !is.data.frame(mt) || nrow(mt) < 1) {
+      return(div(class = "p-3 text-warning", "No cross-validation summary available yet. Run the training pipeline."))
+    }
     best_i <- if (all(is.na(mt$RMSE))) NA_integer_ else which.min(mt$RMSE)
-    rows <- apply(seq_len(nrow(mt)), 1L, function(i) {
+    rows <- lapply(seq_len(nrow(mt)), function(i) {
       tr_class <- if (!is.na(best_i) && i == best_i) "row-best" else ""
       tags$tr(
         class = tr_class,
@@ -562,7 +578,7 @@ server <- function(input, output, session) {
       tags$table(
         class = "metrics-table",
         tags$thead(tags$tr(tags$th("Model"), tags$th("CV RMSE (best tune)"), tags$th("CV R²"))),
-        tags$tbody(rows)
+        tags$tbody(do.call(tagList, rows))
       )
     )
   })

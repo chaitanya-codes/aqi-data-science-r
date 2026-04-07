@@ -1,0 +1,159 @@
+---
+title: "Air Quality Index (AQI) Prediction and Interactive Visualization using Data Science in R"
+subtitle: "Course Project Report (R-based Data Science)"
+author: "chaitanya-codes"
+date: "`r format(Sys.Date(), '%d-%m-%Y')`"
+output:
+  word_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+```
+
+## Abstract
+
+This project implements a complete **Data Science pipeline in R** to predict **Air Quality Index (AQI)** from pollutant concentrations and to communicate insights through a professional, interactive **Shiny dashboard**. Using a real-world India city–day air quality dataset (commonly distributed via Kaggle), the system performs data acquisition, preprocessing, exploratory analysis, feature selection, model training (Linear Regression and Random Forest), model evaluation (RMSE, \(R^2\), cross-validation), and deployment via a dashboard that supports time-series analysis, city-wise comparison, mapping, and user-driven AQI prediction.
+
+## Problem Statement
+
+Air pollution varies across Indian cities and seasons, impacting public health and policy decisions. The goal is to build a reproducible R-based system that:
+
+- explores AQI behavior over time and across cities,
+- quantifies relationships between pollutants and AQI, and
+- predicts AQI from **PM2.5, PM10, NO2, CO, SO2**.
+
+## Objectives
+
+- Automatically obtain the dataset at runtime (no manual upload required for standard execution).
+- Clean and preprocess real-world pollution data (missing values, date parsing, standardized columns).
+- Perform EDA with time-series trends, distributions, and correlations.
+- Train and compare **Linear Regression** and **Random Forest** models.
+- Evaluate models using **RMSE** and **\(R^2\)** (test split + CV summary).
+- Deploy an interactive Shiny dashboard with Plotly and Leaflet visualizations and an AQI prediction panel.
+
+## Technology Stack (R-only)
+
+- **R**: end-to-end implementation
+- **Data wrangling**: `dplyr`
+- **Visualization**: `ggplot2`, `plotly`, `leaflet`
+- **Modeling**: `caret`, `randomForest`
+- **Dashboard**: `shiny`, `bslib`, `bsicons`
+
+## Dataset
+
+### Requirements
+
+The dataset used supports:
+
+- **Multiple Indian cities** (e.g., Delhi, Mumbai, Chennai, Bengaluru, etc.)
+- **Time-series analysis** through a Date column
+- City-wise comparisons and AQI prediction via pollutant fields:
+  - PM2.5, PM10, NO2, CO, SO2
+  - City, Date
+  - AQI (target)
+
+### Source and acquisition approach
+
+The dataset is commonly available on Kaggle as an India AQI city-day table. For full reproducibility, this project downloads the dataset automatically at runtime using a public URL mirror.
+
+## Framework / Architecture (Implemented)
+
+### Architecture overview
+
+**Data Acquisition → Data Preprocessing → EDA → Feature Engineering → Model Training → Evaluation → Deployment (Shiny Dashboard)**
+
+### Module mapping to code
+
+- `data_acquisition.R`: automatic dataset download from a public URL; clear error if download fails; optional environment overrides.
+- `data_preprocessing.R`: standardizes columns, parses dates, imputes missing pollutant values, saves processed `.rds`.
+- `eda.R`: EDA plots (AQI distribution, trends, pollutant distributions).
+- `model_training.R`: trains LM + RF; evaluates with RMSE and \(R^2\); saves model artifacts.
+- `utils.R`: shared helpers (paths, AQI categories/colors, city coordinates).
+- `app.R`: interactive dashboard (KPIs, trend chart, map, pollutant comparison, correlation heatmap, model metrics, prediction panel).
+
+## Data Preprocessing
+
+Key steps:
+
+- Missing pollutant values handled via **median imputation**.
+- Date column parsed to ensure correct time-series ordering and filtering.
+- Columns standardized to consistent names to handle Kaggle-style variants.
+- Negative pollutant values clipped to 0 when present.
+
+## Exploratory Data Analysis (EDA)
+
+The EDA phase includes:
+
+- AQI distribution (histogram)
+- AQI trends over time (city-wise)
+- Pollutant distributions (PM2.5, PM10, NO2, CO, SO2)
+- Correlation analysis between pollutants and AQI
+
+## Feature Engineering / Selection
+
+Predictors used for modeling:
+
+- PM2.5, PM10, NO2, CO, SO2
+
+Target:
+
+- AQI
+
+## Model Building
+
+Models trained:
+
+- **Linear Regression** (baseline)
+- **Random Forest Regression** (preferred nonlinear model)
+
+Training approach:
+
+- Train/test split for hold-out evaluation
+- 5-fold cross-validation within `caret`
+- Center/scale preprocessing inside the training pipeline
+
+## Model Evaluation and Validation
+
+Metrics:
+
+- RMSE
+- \(R^2\)
+
+Validation:
+
+- Hold-out test set evaluation
+- Cross-validation summary (best tune per model)
+
+## Interactive Dashboard (Mandatory)
+
+Dashboard features:
+
+- KPI cards (Avg/Min/Max AQI and number of cities for filtered selection)
+- Plotly AQI trend chart (interactive)
+- Leaflet city-wise AQI map (colored markers)
+- Pollutant comparison bar chart
+- Correlation heatmap
+- Model performance section with RMSE comparison chart and styled tables
+- Prediction panel with AQI category and color indicator
+- Downloadable summary report
+
+## Verification (End-to-end)
+
+The project is verified by running:
+
+- `source("run_pipeline.R")` to build processed data and models
+- `shiny::runApp()` to launch the dashboard
+
+## Plagiarism and Similarity Compliance (Notes)
+
+- The entire implementation is written in R and modularized into distinct scripts.
+- Report text should be written in original phrasing and aligned with implemented code and results.
+
+## Conclusion
+
+This project demonstrates a complete **Data Science application in R** for AQI prediction and interactive visualization for India city–day air quality. It integrates reproducible data handling, comparative modeling, evaluation, and a professional dashboard interface suitable for exploratory analytics and prediction.
+

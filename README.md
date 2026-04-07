@@ -6,7 +6,7 @@ End-to-end **data science in R** for **India** city–day air quality: ingest pu
 
 | File | Purpose |
 |------|--------|
-| `data_acquisition.R` | Downloads the India `city_day` table from a public URL (Hugging Face mirror). |
+| `data_acquisition.R` | Downloads the India `city_day` table from Kaggle (preferred) or a public mirror fallback. |
 | `data_preprocessing.R` | Reads CSV, parses dates, median-imputes pollutants, saves `processed_air_quality.rds`. |
 | `model_training.R` | Trains LM + RF with 5-fold CV; writes `models/artifacts.rds`. |
 | `app.R` | Shiny dashboard: KPIs, trends, map, pollutant bars, correlation, model comparison, AQI prediction. |
@@ -38,6 +38,18 @@ End-to-end **data science in R** for **India** city–day air quality: ingest pu
    shiny::runApp()
    ```
 
+## One-command run (recommended for professor)
+
+From the project folder, double-click:
+
+- `RUN_PROJECT.bat`
+
+Or run in a terminal:
+
+```bash
+Rscript run_project.R
+```
+
 4. **Optional EDA** (after preprocessing):
 
    ```r
@@ -52,8 +64,5 @@ End-to-end **data science in R** for **India** city–day air quality: ingest pu
 
 ## Data source
 
-Default download: **Hugging Face** dataset `AdityaaXD/AQI-Of-India` (`city_day.csv`), aligned with common **Kaggle / CPCB** India air-quality fields (City, Date, PM2.5, PM10, NO2, CO, SO2, AQI).
-
-## Author
-
-Student project — *Air Quality Index Prediction and Visualization using Data Science in R*.
+Preferred dataset: **Kaggle** `rohanrao/air-quality-data-in-india` (`city_day.csv`).  
+Automatic fallback (no credentials): public mirror `AdityaaXD/AQI-Of-India` (`city_day.csv`).

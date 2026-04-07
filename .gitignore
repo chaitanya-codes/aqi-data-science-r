@@ -6,7 +6,6 @@
 .Rproj.user/
 
 # Generated data & models (regenerate locally)
-data/air_quality.csv
 data/processed_air_quality.rds
 models/*.rds
 data/*.part
